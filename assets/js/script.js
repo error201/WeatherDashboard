@@ -4,7 +4,7 @@ var currentBaseURL = "https://api.openweathermap.org/data/2.5/weather?"
 var forcastBaseURL = "https://api.openweathermap.org/data/2.5/forecast?"
 var geocodingBaseURl = "https://api.openweathermap.org/geo/1.0/direct?"
 var currentDay = dayjs()
-var forecastDays = [[,0,1000,0],[,0,1000,0],[,0,1000,0],[,0,1000,0],[,0,1000,0]]
+var forecastDays = [[, 0, 1000, 0], [, 0, 1000, 0], [, 0, 1000, 0], [, 0, 1000, 0], [, 0, 1000, 0]]
 var currentLat = 0;
 var currentLon = 0;
 
@@ -16,6 +16,7 @@ if (storedCities) {
 
 var submitButtonEl = $(".search-button");
 var cityListEl = $(".historical-cities");
+var historicalCities = $(".historical-cities");
 var currentCityEl = $(".city");
 var currentTempEl = $(".current-temp");
 var currentWindEl = $(".current-wind");
@@ -38,13 +39,13 @@ function init() {
         }
     }
     for (var i = 0; i <= 4; i++) {
-        forecastDays[i][0] = (dayjs().add((i+1), 'day').format("YYYY-MM-DD"));
+        forecastDays[i][0] = (dayjs().add((i + 1), 'day').format("YYYY-MM-DD"));
     }
 };
 
 // Function to add a button for each city searched for.
 function addCityButton(city) {
-    newCityButton = $('<button type="city" class="btn btn-secondary m-3"></button>')
+    newCityButton = $('<button type="city" class="btn btn-secondary m-3 city-button"></button>')
     newCityButton.attr("data-city", city);
     newCityButton.text(city);
     $(cityListEl).append(newCityButton);
@@ -59,6 +60,11 @@ function capitalize(myText) {
 
 // Function to send and retrieve the API request.
 function getApiData(city) {
+    var cards = $(".card");
+    if (cards.length) {
+        $(".card").remove();
+    }
+
     completeGeoURL = `${geocodingBaseURl}q=${city}&appid=${myApiKey}`
     fetch(completeGeoURL)
         .then(function (response) {
@@ -95,19 +101,19 @@ function getApiData(city) {
                         for (var j = 0; j < data.list.length; j++) {
                             searchDay = dayjs.unix(data.list[j].dt).format("YYYY-MM-DD");
                             if (searchDay == workingDay) {
-                                if(data.list[j].main.temp_max >= forecastDays[i][1]){
+                                if (data.list[j].main.temp_max >= forecastDays[i][1]) {
                                     forecastDays[i][1] = data.list[j].main.temp_max;
                                 }
-                                if(data.list[j].main.temp_min <= forecastDays[i][2]){
+                                if (data.list[j].main.temp_min <= forecastDays[i][2]) {
                                     forecastDays[i][2] = data.list[j].main.temp_min;
                                 }
-                                if(data.list[j].main.humidity >= forecastDays[i][3]){
+                                if (data.list[j].main.humidity >= forecastDays[i][3]) {
                                     forecastDays[i][3] = data.list[j].main.humidity;
                                 }
                             } else { continue; }
                         }
                     }
-                    for (var k = 0; k < forecastDays.length; k++){
+                    for (var k = 0; k < forecastDays.length; k++) {
                         var newCard = $('<div class="card text-center w-30 bg-dark text-white">');
                         var newTitle = $('<h5 class="card-title"></h5>');
                         var cardTextHigh = $('<p class="card-text low-temp"></p>');
@@ -118,15 +124,14 @@ function getApiData(city) {
                         $(newCard).append(cardTextLow);
                         $(newCard).append(cardTextHum);
                         $(newTitle).text(forecastDays[k][0]);
-                        $(cardTextHigh).text(`High: ${forecastDays[k][1]}`);
-                        $(cardTextLow).text(`Low: ${forecastDays[k][2]}`);
-                        $(cardTextHum).text(`Humidity: ${forecastDays[k][3]}`);
+                        $(cardTextHigh).text(`High: ${forecastDays[k][1]} °F`);
+                        $(cardTextLow).text(`Low: ${forecastDays[k][2]} °F`);
+                        $(cardTextHum).text(`Humidity: ${forecastDays[k][3]}%`);
                         $(forecastEl).append(newCard);
                     }
                 })
         })
 }
-
 
 
 
@@ -146,6 +151,8 @@ submitButtonEl.on('click', function (event) {
     getApiData(capCity);
 });
 
-
+historicalCities.on('click', '.city-button', function (event) {
+    getApiData($(event.target).attr('data-city'));
+});
 
 init();
